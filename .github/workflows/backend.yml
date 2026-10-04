@@ -37,7 +37,7 @@ jobs:
           version: ${{ env.UV_VERSION }}
           working-directory: backend
           enable-cache: true
-          cache-dependency-glob: backend/uv.lock
+          cache-dependency-glob: "**/uv.lock"
       - run: uv sync
       - run: uv run ruff check .
       - run: uv run ruff format --check .
@@ -64,7 +64,7 @@ jobs:
           version: ${{ env.UV_VERSION }}
           working-directory: backend
           enable-cache: true
-          cache-dependency-glob: backend/uv.lock
+          cache-dependency-glob: "**/uv.lock"
       - run: uv sync
       - name: Cache the embedding model (pinned by SHA-256 in models.py)
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -93,7 +93,7 @@ jobs:
           version: ${{ env.UV_VERSION }}
           working-directory: backend
           enable-cache: true
-          cache-dependency-glob: backend/uv.lock
+          cache-dependency-glob: "**/uv.lock"
       - run: uv sync
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:

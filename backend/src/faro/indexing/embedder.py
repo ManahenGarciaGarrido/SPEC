@@ -73,8 +73,14 @@ class FastEmbedEmbedder:
     def embed_documents(self, texts: Sequence[str]) -> Vector:
         if not texts:
             return np.zeros((0, self.dim), dtype=np.float32)
-        vectors = list(self._model.embed(list(texts), batch_size=self._batch_size))
-        return np.asarray(np.stack(vectors), dtype=np.float32)
+        # Each batch is padded to its longest text: batching texts of similar
+        # length wastes less work. The original order is restored afterwards.
+        order = sorted(range(len(texts)), key=lambda i: len(texts[i]))
+        vectors = list(self._model.embed([texts[i] for i in order], batch_size=self._batch_size))
+        result = np.empty((len(texts), self.dim), dtype=np.float32)
+        for position, index in enumerate(order):
+            result[index] = vectors[position]
+        return result
 
     def embed_query(self, text: str) -> Vector:
         vectors = list(self._model.embed([self._spec.query_prefix + text]))

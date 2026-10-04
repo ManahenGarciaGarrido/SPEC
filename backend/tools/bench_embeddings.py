@@ -138,14 +138,23 @@ def main() -> int:
     parser.add_argument("--models", nargs="+", required=True)
     parser.add_argument("--threads", type=int, default=os.cpu_count() or 4)
     parser.add_argument("--out", required=True)
+    parser.add_argument("--rerun", action="store_true", help="Measure models already in --out")
     args = parser.parse_args()
     spec = json.loads(QUERIES.read_text(encoding="utf-8"))
-    runs = []
+    out = Path(args.out)
+    # Results are written after every model, so a long run that is interrupted
+    # keeps what it finished; models already in the file are not run again.
+    previous = json.loads(out.read_text(encoding="utf-8")) if out.exists() else {"runs": []}
+    runs = [r for r in previous["runs"] if not (args.rerun and r["model"] in args.models)]
     for key in args.models:
+        if any(r["model"] == key for r in runs):
+            print(f"== {key}: already measured, skipping (use --rerun)", file=sys.stderr)
+            continue
         print(f"== {key}", file=sys.stderr, flush=True)
         run = run_model(key, DataDir(args.models_data), Path(args.corpus), spec, args.threads)
         run["summary"] = summarize(run)
         runs.append(run)
+        _write(out, args.threads, runs)
         hy = run["summary"]["hybrid"]
         print(
             f"   {run['chunks']} chunks in {run['index_seconds']} s "
@@ -154,14 +163,18 @@ def main() -> int:
             file=sys.stderr,
             flush=True,
         )
+    _write(out, args.threads, runs)
+    return 0
+
+
+def _write(out: Path, threads: int, runs: list[dict[str, Any]]) -> None:
     payload = {
-        "threads": args.threads,
+        "threads": threads,
         "cpu": os.cpu_count(),
         "guard_blocked_attempts": guard.blocked_attempts(),
         "runs": runs,
     }
-    Path(args.out).write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
-    return 0
+    out.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
 if __name__ == "__main__":

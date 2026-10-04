@@ -69,13 +69,13 @@ Consultadas hoy en PyPI, npm, crates.io y el repositorio de llama.cpp. Se fijan 
 | lancedb | 0.39.0 | Wheel `abi3` para win_amd64. FTS nativo (`use_tantivy=False` por defecto) y `RRFReranker` incluidos **[verificado en el código]**. Sin telemetría (solo OpenTelemetry opcional, que no instalamos) **[verificado]** |
 | pyarrow | 25.0.1 | dependencia de LanceDB |
 | fastembed / onnxruntime | 0.8.1 / 1.30.0 | ver 4.2 |
-| tree-sitter | 0.26.0 | + gramáticas individuales, ver 4.1 |
+| tree-sitter | **0.25.2** (no 0.26.0) | + gramáticas individuales, ver 4.1. 0.26.0 corrompe la memoria con la gramática de Markdown (hallazgo de la Fase 1, sección 11) |
 | pathspec | 1.1.1 | respetar `.gitignore` |
 | psutil | 7.2.2 | RAM, procesos, conexiones abiertas (indicador "sin conexión") |
 | platformdirs | 4.12.3 | directorio de datos por defecto de la CLI en desarrollo |
 | httpx | 0.28.1 | cliente hacia `llama-server` (loopback) y descargas explícitas |
 | pyinstaller | 6.22.3 | Fase 6 |
-| *dev:* pytest, pytest-socket, pytest-asyncio, respx, ruff, mypy | 9.1.1, 0.8.1, 1.4.0, 0.23.1, 0.16.10, 2.4.0 | |
+| *dev:* pytest, ruff, mypy | 9.1.1, 0.16.10, 2.4.0 | `pytest-socket` descartado en la Fase 1 (sección 11) |
 
 **Frontend**
 
@@ -292,7 +292,7 @@ Estos eventos son también los que mueven a la mascota: escribir → *escuchando
 |---|---|---|
 | **Solo lectura** | `safe_fs` sin API de escritura; lista blanca; resolución a ruta real + contención; recorrido sin seguir enlaces ni junctions | **Escape:** `..`, rutas absolutas, symlink hacia fuera, junction hacia fuera *(Windows)*, `\\?\` y UNC *(Windows)*, ADS `archivo:flujo` *(Windows)*, mayúsculas/minúsculas, 8.3 *(Windows)*. **Hash:** nombres, tamaños, mtimes y contenido de una carpeta de prueba, idénticos antes y después de indexar, buscar, preguntar (modelo simulado) y previsualizar. **Estático (AST):** fuera de `safe_fs` y `datadir` nadie llama a `open`, `os.*` de E/S, `pathlib` de E/S, `shutil`, `sqlite3.connect`, `lancedb.connect`… |
 | **Solo escribe en datadir** | `datadir` comprueba la contención en cada apertura | Unitarios de `datadir` + el test estático anterior |
-| **Sin red** | `faro.net` es el único que importa librerías de red; descargas solo por acción explícita; `llama-server` con `--offline` y entorno saneado; fastembed `local_files_only`; CSP; todo empaquetado | **Toda la batería** corre con `pytest-socket` (`--disable-socket --allow-hosts=127.0.0.1,::1`) activado en la configuración, no como opción. **Job de CI** que la ejecuta dentro de un *network namespace* de Linux con solo loopback (cubre también subprocesos). **Estático:** imports de red solo en `faro.net`. **argv** de `llama-server`. **Frontend:** el `dist/` compilado no contiene URLs externas; la CSP de `tauri.conf.json` es la esperada |
+| **Sin red** | `faro.net` es el único que importa librerías de red; descargas solo por acción explícita; `llama-server` con `--offline` y entorno saneado; fastembed `local_files_only`; CSP; todo empaquetado | **Toda la batería** corre con el guardia de red del propio producto instalado desde el arranque de pytest y comprobado antes y después de cada test (bloquea también DNS). **Job de CI** que la ejecuta dentro de un *network namespace* de Linux con solo loopback (cubre también subprocesos). **Estático:** imports de red solo en `faro.net`. **argv** de `llama-server`. **Frontend:** el `dist/` compilado no contiene URLs externas; la CSP de `tauri.conf.json` es la esperada |
 | **Verificable** | Cada fragmento conserva ruta, líneas y origen; mapeo `[n]` → fuente; camino explícito "sin fuentes" | Con modelo simulado: la respuesta trae citas con ruta, líneas y origen; índice vacío → evento "sin fuentes"; `[n]` inválidas descartadas |
 | **Sin herramientas** | Petición sin `tools`; `--no-agent`; sin flags de herramientas | Test del payload enviado y del argv |
 
@@ -380,3 +380,24 @@ Al cerrar cada fase: tests en verde, comando de demo, resumen en español, commi
 | P6 | Fuente de documentación | DevDocs | Se implementa en la Fase 3, revisando formato y licencias de cada paquete. |
 | P7 | Gramática de Dart | A mi elección | Gramática canónica `UserNobody14/tree-sitter-dart`, compilada desde el código fuente en el commit `be07cf7` (dependencia git fijada en `uv.lock`). Su binding devuelve un puntero entero (API deprecada en `tree-sitter` 0.26); se envuelve en un `PyCapsule` y un test lo vigila. |
 | P8 | Salida de `check-prereqs.ps1` | Pendiente | El usuario lo ejecutará en su máquina. No bloquea la Fase 1 (el backend se desarrolla y prueba en Linux y en el CI de Windows). |
+
+---
+
+## 11. Fase 1: desviaciones del plan y hallazgos
+
+Lo que la implementación cambió respecto a las secciones anteriores, y por qué. Todo lo de aquí está cubierto por tests.
+
+| # | Plan original | Qué se hizo | Motivo |
+|---|---|---|---|
+| 1 | `pytest-socket` bloquea la red en los tests | Los tests usan el **guardia de red del producto** (`faro.net.guard`), activo toda la sesión y verificado alrededor de cada test, más la batería completa dentro de un *network namespace* (`scripts/pytest-offline.sh`, también en CI) | `pytest-socket` guarda la función original al importarse y la restaura tras cada test, deshaciendo en silencio el guardia del producto; además no bloquea DNS en modo `--allow-hosts`. El guardia propio es más estricto y es el mismo que protege la app |
+| 2 | `tree-sitter` 0.26.0 | **0.25.2** + test de regresión en subproceso con `PYTHONMALLOC=debug` | 0.26.0 corrompe el *heap* al recorrer árboles de Markdown (*segfault* reproducible sin código de Faro). Validado: el test falla con 0.26.0 y pasa con 0.25.2. Dependabot ignora 0.26.0 |
+| 3 | Compilar la gramática de Dart desde git | **Copia literal en `backend/grammars/tree-sitter-dart`** con `PROVENANCE.md` (commit y SHA-256 de cada archivo) y un test que vigila que no cambie | El repositorio upstream tiene un submódulo con URL SSH: `uv sync` fallaba en el CI y fallaría en cualquier equipo sin clave SSH de GitHub. Ahora `uv sync` solo necesita PyPI |
+| 4 | — | Las APIs de frontera usan verbos propios (`SafeFS.read_file/locate`, `DataDir.load_text/load_json`, `AppContext.create`) | Permite que el test estático prohíba los verbos genéricos de disco (`open`, `read_bytes`, `resolve`, `exists`...) fuera de `safe_fs`/`datadir` sin falsos positivos |
+| 5 | — | Exclusiones duras que un `.gitignore` no puede revertir (`.env*`, `*.pem`, `*.key`, `key.properties`...); los *placeholders* de OneDrive "solo en la nube" no se abren nunca | Abrir un *placeholder* hace que OneDrive lo descargue: sería tráfico de red provocado por Faro |
+| 6 | — | La consulta de texto quita palabras vacías de español e inglés (solo la consulta, nunca el índice) | Medido con modelo real: en una pregunta en español sobre código en inglés, "se/el/de/un" coincidían con comentarios en español de otros archivos y la fusión RRF sacaba el archivo correcto del top 3 |
+| 7 | — | `SearchHit` conserva la distancia coseno y la puntuación BM25 además del ranking | Base para el umbral de "no hay fuentes relevantes" de la Fase 2 |
+| 8 | — | La caché de fastembed apunta al directorio de datos | Por defecto fastembed crea `fastembed_cache` en `%TEMP%`: escritura fuera del directorio de datos |
+| 9 | — | La búsqueda solo consulta las raíces configuradas | Una carpeta quitada de la lista blanca desaparece de los resultados al momento, sin esperar a reindexar |
+| 10 | Troceado por función/clase | Además: comentarios, decoradores y firmas de Dart se pegan al nodo siguiente; la cabecera de una función grande viaja con el primer trozo del cuerpo | Sin ello, la prueba con Dart y TypeScript dejaba la firma `login(...)` separada de su cuerpo, y el fragmento citado no se entendía |
+| 11 | — | Partición de identificadores sensible a Unicode | `validación` se partía en `validaci` + `ón` |
+

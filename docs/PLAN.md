@@ -1,8 +1,8 @@
 # Plan de implementación (Fase 0)
 
-> **Estado:** propuesta pendiente de tu visto bueno · **Fecha:** 2026-10-04
+> **Estado:** aprobado el 2026-10-04 (respuestas en la sección 10) · **Fecha:** 2026-10-04
 > **Fuente de verdad del producto:** [`docs/SPEC.md`](SPEC.md). Este documento explica *cómo* la vamos a cumplir.
-> **Nombre provisional:** **Faro** (paquete Python `faro`). Es solo un nombre de trabajo: ver pregunta **P1**.
+> **Nombre:** **Faro** (paquete Python `faro`, identificador `com.manahengarcia.faro`). Ver P1.
 
 Convención de este documento: **[verificado]** = lo he comprobado hoy en el registro oficial o en el código fuente de la dependencia; **[a verificar en Fn]** = depende de tu máquina Windows o de algo que no puedo ejecutar aquí.
 
@@ -368,15 +368,15 @@ Al cerrar cada fase: tests en verde, comando de demo, resumen en español, commi
 
 ---
 
-## 10. Preguntas para ti
+## 10. Preguntas y decisiones (resueltas el 2026-10-04)
 
-Las marcadas como **bloqueantes** las necesito antes de la Fase 1; el resto pueden esperar a su fase.
-
-- **P1 (bloqueante): nombre del producto.** Afecta a la carpeta de datos, al identificador de Tauri y al paquete Python. Propuesta provisional: **Faro**, identificador `com.manahengarcia.faro`. Cambiarlo más tarde es posible, pero mueve la carpeta de datos.
-- **P2 (bloqueante): ¿en qué idioma harás normalmente las preguntas?** Si es español (lo que asumo), el modelo de embeddings tiene que ser multilingüe o al menos compararse con uno que lo sea (4.2). Recomendación: comparativa en F1 entre `jina-v2-base-code` y `Qwen3-Embedding-0.6B-Q`.
-- **P3: ¿qué va dentro del instalador?** Recomendación: llama.cpp (CPU + CUDA 12.4), el modelo de embeddings y WebView2 offline, para que funcione sin conexión desde el primer momento (instalador de ~1–1,5 GB). Alternativa ligera: solo CPU y el resto como descarga explícita o importación desde carpeta. El GGUF nunca va dentro (lo dice la especificación).
-- **P4: ¿CI con GitHub Actions (Linux + Windows)?** Es la forma de ejecutar de verdad los tests de Windows desde esta sesión. En repositorios privados consume minutos (los de Windows cuentan doble). Recomendación: sí. Relacionado: ¿desarrollaremos desde sesiones en la nube como esta, desde Claude Code en tu Windows, o combinando? En la nube no puedo abrir la ventana de la app; tendrías que probarla tú.
-- **P5: para la aceptación de la Fase 6, ¿tienes Windows Pro (Windows Sandbox) o una VM?**
-- **P6 (puede esperar a F3): fuente de la documentación descargable.** Propuesta: DevDocs, que ofrece paquetes descargables de Flutter, Dart, Node.js, Python, React, Docker, etc. Confirmaré formato y licencias antes de implementarlo.
-- **P7: gramática de Dart.** ¿De acuerdo con compilar la gramática canónica (4.1) en lugar de usar el wheel de un particular?
-- **P8: ¿puedes ejecutar `scripts/check-prereqs.ps1 -Json` en tu máquina de desarrollo y pegarme la salida?** Con eso cierro la lista de lo que falta.
+| # | Pregunta | Respuesta del usuario | Decisión |
+|---|---|---|---|
+| P1 | Nombre del producto | "Ponle tú uno" | **Faro**. Paquete Python `faro`, identificador de Tauri `com.manahengarcia.faro`, directorio de datos `%LOCALAPPDATA%\com.manahengarcia.faro` (el mismo que usará Tauri con `app_local_data_dir()`). |
+| P2 | Idioma de las preguntas | Español; inglés si resulta más eficiente | La comparativa de embeddings de la Fase 1 mide **las mismas preguntas en español y en inglés** con cada modelo. Así la recomendación de idioma sale de datos, no de intuición. |
+| P3 | Contenido del instalador | A mi elección | Instalador completo: llama.cpp (CPU + CUDA 12.4), modelo de embeddings y WebView2 offline. Se revisa en la Fase 6 con los tamaños reales; si CUDA dispara el tamaño, pasa a componente opcional del instalador. |
+| P4 | CI con GitHub Actions | Sí, montado profesionalmente | Desde la Fase 1: lint + tipos, tests en Ubuntu **y Windows**, la batería completa dentro de un *network namespace* sin red, acciones fijadas por SHA, permisos mínimos y Dependabot. |
+| P5 | Windows Pro / Sandbox | Sí, Windows Pro | Aceptación de la Fase 6 en Windows Sandbox con `<Networking>Disable</Networking>`. |
+| P6 | Fuente de documentación | DevDocs | Se implementa en la Fase 3, revisando formato y licencias de cada paquete. |
+| P7 | Gramática de Dart | A mi elección | Gramática canónica `UserNobody14/tree-sitter-dart`, compilada desde el código fuente en el commit `be07cf7` (dependencia git fijada en `uv.lock`). Su binding devuelve un puntero entero (API deprecada en `tree-sitter` 0.26); se envuelve en un `PyCapsule` y un test lo vigila. |
+| P8 | Salida de `check-prereqs.ps1` | Pendiente | El usuario lo ejecutará en su máquina. No bloquea la Fase 1 (el backend se desarrolla y prueba en Linux y en el CI de Windows). |

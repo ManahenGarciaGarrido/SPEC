@@ -1,0 +1,4 @@
+{
+  "featureFlags": { "darkMode": true, "newCheckout": false },
+  "inventory": { "lowStockThreshold": 5 }
+}

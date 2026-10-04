@@ -1,0 +1,7 @@
+server:
+  port: 8080
+  cors_origins:
+    - http://localhost:3000
+database:
+  url: postgres://localhost/app
+  pool_size: 10

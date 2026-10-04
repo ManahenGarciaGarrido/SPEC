@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+  - package-ecosystem: uv
+    directory: /backend
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    groups:
+      python-dependencies:
+        patterns: ["*"]
+    ignore:
+      # 0.26.0 corrupts memory with the Markdown grammar
+      # (backend/tests/regressions/test_tree_sitter_memory.py). Re-evaluate by hand.
+      - dependency-name: tree-sitter
+        versions: ["0.26.0"]

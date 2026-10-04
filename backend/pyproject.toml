@@ -48,7 +48,7 @@ required-version = ">=0.12.23"
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-src = ["src", "tests"]
+src = ["src", "tests", "tools"]
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF", "PTH", "S", "N", "C4", "PIE", "RET", "TID"]
@@ -67,7 +67,7 @@ quote-style = "double"
 python_version = "3.12"
 strict = true
 warn_unreachable = true
-files = ["src", "tests"]
+files = ["src", "tests", "tools"]
 
 [[tool.mypy.overrides]]
 module = ["fastembed.*", "pyarrow.*", "lancedb.*", "pathspec.*"]

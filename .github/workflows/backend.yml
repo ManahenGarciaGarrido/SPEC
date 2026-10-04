@@ -1,0 +1,109 @@
+name: backend
+
+on:
+  push:
+    paths: ["backend/**", ".github/workflows/backend.yml"]
+  pull_request:
+    paths: ["backend/**", ".github/workflows/backend.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_VERSION: "0.12.23"
+  UV_LOCKED: "1" # never resolve again in CI: install exactly what uv.lock pins
+  PYTHONUTF8: "1"
+
+defaults:
+  run:
+    shell: bash
+    working-directory: backend
+
+jobs:
+  quality:
+    name: Lint, format and types (Linux + Windows targets)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          working-directory: backend
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - run: uv sync
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run mypy
+      - name: mypy as if on Windows (checks the Windows-only code paths)
+        run: uv run mypy --platform win32
+
+  tests:
+    name: Tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025]
+    runs-on: ${{ matrix.os }}
+    env:
+      FARO_TEST_MODEL_DATA_DIR: ${{ github.workspace }}/.faro-models
+      FARO_REQUIRE_MODEL_TESTS: "1" # a missing model fails the run instead of skipping
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          working-directory: backend
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - run: uv sync
+      - name: Cache the embedding model (pinned by SHA-256 in models.py)
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .faro-models
+          key: faro-models-${{ runner.os }}-${{ hashFiles('backend/src/faro/indexing/models.py', 'backend/src/faro/config.py') }}
+      - name: Download the default embedding model (explicit network step, not part of the tests)
+        run: |
+          model=$(uv run python -c "from faro.config import DEFAULT_EMBEDDING_MODEL as m; print(m)")
+          uv run faro --data-dir "$FARO_TEST_MODEL_DATA_DIR" models download "$model"
+      - name: Test suite (network guard active for the whole session)
+        run: uv run pytest
+
+  offline:
+    name: Tests inside a network namespace (no route out of the machine)
+    runs-on: ubuntu-24.04
+    env:
+      FARO_TEST_MODEL_DATA_DIR: ${{ github.workspace }}/.faro-models
+      FARO_REQUIRE_MODEL_TESTS: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+          working-directory: backend
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - run: uv sync
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .faro-models
+          key: faro-models-${{ runner.os }}-${{ hashFiles('backend/src/faro/indexing/models.py', 'backend/src/faro/config.py') }}
+      - name: Download the default embedding model (before cutting the network)
+        run: |
+          model=$(uv run python -c "from faro.config import DEFAULT_EMBEDDING_MODEL as m; print(m)")
+          uv run faro --data-dir "$FARO_TEST_MODEL_DATA_DIR" models download "$model"
+      - name: Allow unprivileged user namespaces (restricted by AppArmor on Ubuntu 24.04)
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Whole suite with only loopback available
+        run: scripts/pytest-offline.sh

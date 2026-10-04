@@ -24,8 +24,9 @@ dependencies = [
     "tree-sitter-python==0.25.0",
     "tree-sitter-typescript==0.23.2",
     "tree-sitter-yaml==0.7.2",
-    # Canonical Dart grammar, built from source at a pinned commit (docs/PLAN.md 4.1).
-    "tree-sitter-dart @ git+https://github.com/UserNobody14/tree-sitter-dart@be07cf7118d3dba06236a3f19541685a68209934",
+    # Canonical Dart grammar, vendored unmodified in grammars/ and built from source
+    # (see grammars/tree-sitter-dart/PROVENANCE.md and docs/PLAN.md 4.1).
+    "tree-sitter-dart",
 ]
 
 [project.scripts]
@@ -45,10 +46,14 @@ build-backend = "uv_build"
 [tool.uv]
 required-version = ">=0.12.23"
 
+[tool.uv.sources]
+tree-sitter-dart = { path = "grammars/tree-sitter-dart" }
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"
 src = ["src", "tests", "tools"]
+extend-exclude = ["grammars"]  # third-party code, vendored unmodified
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF", "PTH", "S", "N", "C4", "PIE", "RET", "TID"]

@@ -1,0 +1,15 @@
+LICENSE
+pyproject.toml
+setup.py
+bindings/python/tree_sitter_dart/__init__.py
+bindings/python/tree_sitter_dart/__init__.pyi
+bindings/python/tree_sitter_dart/binding.c
+bindings/python/tree_sitter_dart/py.typed
+bindings/python/tree_sitter_dart.egg-info/PKG-INFO
+bindings/python/tree_sitter_dart.egg-info/SOURCES.txt
+bindings/python/tree_sitter_dart.egg-info/dependency_links.txt
+bindings/python/tree_sitter_dart.egg-info/not-zip-safe
+bindings/python/tree_sitter_dart.egg-info/requires.txt
+bindings/python/tree_sitter_dart.egg-info/top_level.txt
+src/parser.c
+src/scanner.c

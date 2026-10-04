@@ -191,7 +191,7 @@ requires-dist = [
     { name = "platformdirs", specifier = "==4.12.3" },
     { name = "pyarrow", specifier = "==25.0.1" },
     { name = "tree-sitter", specifier = "==0.25.2" },
-    { name = "tree-sitter-dart", git = "https://github.com/UserNobody14/tree-sitter-dart?rev=be07cf7118d3dba06236a3f19541685a68209934" },
+    { name = "tree-sitter-dart", directory = "grammars/tree-sitter-dart" },
     { name = "tree-sitter-javascript", specifier = "==0.25.0" },
     { name = "tree-sitter-json", specifier = "==0.24.8" },
     { name = "tree-sitter-lua", specifier = "==0.5.0" },
@@ -831,7 +831,11 @@ wheels = [
 [[package]]
 name = "tree-sitter-dart"
 version = "0.0.1"
-source = { git = "https://github.com/UserNobody14/tree-sitter-dart?rev=be07cf7118d3dba06236a3f19541685a68209934#be07cf7118d3dba06236a3f19541685a68209934" }
+source = { directory = "grammars/tree-sitter-dart" }
+
+[package.metadata]
+requires-dist = [{ name = "tree-sitter", marker = "extra == 'core'", specifier = "~=0.21" }]
+provides-extras = ["core"]
 
 [[package]]
 name = "tree-sitter-javascript"

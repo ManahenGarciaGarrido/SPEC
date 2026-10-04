@@ -61,10 +61,10 @@ def run_model(
     key: str, models_data: DataDir, corpus: Path, spec: dict[str, Any], threads: int
 ) -> dict[str, Any]:
     started = time.monotonic()
-    embedder = embedder_module.load(models_data, key, threads=threads)
+    embedder = embedder_module.load(models_data, key, threads=threads, bulk=True)
     load_seconds = time.monotonic() - started
     with tempfile.TemporaryDirectory(prefix=f"bench-{key}-") as tmp:
-        app = AppContext.create(DataDir(tmp), lambda _d, _k: embedder)
+        app = AppContext.create(DataDir(tmp), lambda *_: embedder)
         settings = app.settings
         root_names: dict[str, str] = {}
         for repo in spec["corpus"]:

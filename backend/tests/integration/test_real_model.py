@@ -62,7 +62,7 @@ def test_vectors_are_normalized_and_sized(real_embedder: Embedder) -> None:
 def test_questions_find_the_right_file(
     real_embedder: Embedder, datadir: DataDir, sample_repo: Path, question: str, expected: str
 ) -> None:
-    app = AppContext.create(datadir, lambda _d, _k: real_embedder)
+    app = AppContext.create(datadir, lambda *_: real_embedder)
     settings, _ = config.add_root(datadir, app.settings, str(sample_repo))
     app.save_settings(settings)
     blocked_before = guard.blocked_attempts()

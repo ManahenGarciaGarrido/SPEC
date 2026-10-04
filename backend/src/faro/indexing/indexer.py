@@ -77,10 +77,18 @@ def decode_text(data: bytes) -> str | None:
     return None
 
 
+# Attention memory grows with the square of the input length, times the batch
+# size: one single-line 6 KB HTML file (~3,000 tokens) in a batch of 16 needed
+# >10 GB and got the process killed. Only the embedding input is capped; the
+# chunk is still stored whole, cited whole and full-text indexed whole. Normal
+# chunks (<= 1,800 chars + header) are unaffected; ~2 chars/token worst case.
+MAX_EMBEDDING_CHARS = 2000
+
+
 def embedding_text(rel_path: str, chunk: chunking.Chunk) -> str:
-    """What the embedding model sees: location first, then the code."""
+    """What the embedding model sees: location first, then the code (capped)."""
     header = f"{rel_path}\n{chunk.symbol}" if chunk.symbol else rel_path
-    return f"{header}\n\n{chunk.text}"
+    return f"{header}\n\n{chunk.text}"[:MAX_EMBEDDING_CHARS]
 
 
 class Indexer:

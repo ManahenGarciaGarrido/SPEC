@@ -191,7 +191,7 @@ def _cli(datadir: DataDir, embedder: object, *argv: str) -> tuple[int, str, str]
     out, err = io.StringIO(), io.StringIO()
     code = cli.main(
         ["--data-dir", str(datadir.root), *argv],
-        embedder_factory=lambda _d, _k: embedder,  # type: ignore[arg-type,return-value]
+        embedder_factory=lambda *_: embedder,  # type: ignore[arg-type]
         out=out,
         err=err,
     )

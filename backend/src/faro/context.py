@@ -19,11 +19,12 @@ from faro.search import hybrid
 INDEX_DIR = "index"
 STATE_DB = "state.db"
 
-EmbedderFactory = Callable[[DataDir, str], Embedder]
+# (data directory, model key, bulk) -> embedder. ``bulk`` is True for indexing runs.
+EmbedderFactory = Callable[[DataDir, str, bool], Embedder]
 
 
-def _load_embedder(datadir: DataDir, key: str) -> Embedder:
-    return embedder_module.load(datadir, key)
+def _load_embedder(datadir: DataDir, key: str, bulk: bool) -> Embedder:
+    return embedder_module.load(datadir, key, bulk=bulk)
 
 
 @dataclass
@@ -47,8 +48,11 @@ class AppContext:
         return SafeFS(self.settings.safe_roots())
 
     def embedder(self) -> Embedder:
+        """Long-lived embedder for queries (memory-lean)."""
         if self._embedder is None:
-            self._embedder = self.embedder_factory(self.datadir, self.settings.embedding_model)
+            self._embedder = self.embedder_factory(
+                self.datadir, self.settings.embedding_model, False
+            )
         return self._embedder
 
     def manifest(self) -> Manifest:
@@ -62,12 +66,14 @@ class AppContext:
         progress: Callable[[IndexProgress], None] | None = None,
         cancel: threading.Event | None = None,
     ) -> Indexer:
+        """An indexer with its own bulk embedder, released together with the indexer."""
+        bulk = self.embedder_factory(self.datadir, self.settings.embedding_model, True)
         return Indexer(
             fs=self.fs(),
             settings=self.settings,
-            chunk_store=self.store(),
+            chunk_store=ChunkStore(self.datadir.connect_lancedb(INDEX_DIR), bulk.dim),
             file_manifest=self.manifest(),
-            embedder=self.embedder(),
+            embedder=bulk,
             skip_dirs=[str(self.datadir.root)],
             progress=progress,
             cancel=cancel,

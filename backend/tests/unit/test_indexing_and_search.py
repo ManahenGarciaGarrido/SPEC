@@ -67,10 +67,10 @@ def test_changing_the_embedding_model_rebuilds_everything(
     from faro.datadir import DataDir
 
     assert isinstance(datadir, DataDir)
-    first = AppContext.create(datadir, lambda _d, _k: HashEmbedder(model_id="model-a"))
+    first = AppContext.create(datadir, lambda *_: HashEmbedder(model_id="model-a"))
     _whitelist(first, sample_repo)
     first.indexer().run()
-    second = AppContext.create(datadir, lambda _d, _k: HashEmbedder(model_id="model-b"))
+    second = AppContext.create(datadir, lambda *_: HashEmbedder(model_id="model-b"))
     report = second.indexer().run()
     assert report.full_rebuild
     assert report.files_indexed == 12
@@ -192,6 +192,21 @@ def test_text_query_is_safe_and_expanded() -> None:
 )
 def test_decode_text(raw: bytes, expected: str | None) -> None:
     assert decode_text(raw) == expected
+
+
+def test_embedding_input_is_capped_but_the_chunk_is_kept_whole(
+    app: AppContext, sample_repo: Path
+) -> None:
+    from faro.indexing.chunking import Chunk
+
+    huge = Chunk(1, 1, "<td>" * 5000, "")
+    assert len(indexer_module.embedding_text("t.html", huge)) == indexer_module.MAX_EMBEDDING_CHARS
+    line = "const BIG_TABLE = [" + ", ".join(f"'{i:05d}'" for i in range(3000)) + "];\n"
+    (sample_repo / "web" / "src" / "table.ts").write_text(line)
+    _whitelist(app, sample_repo)
+    app.indexer().run()
+    hit = app.search("BIG_TABLE", limit=1)[0]
+    assert hit.rel_path == "web/src/table.ts" and hit.text == line.rstrip("\n")
 
 
 def test_embedding_text_puts_location_first() -> None:

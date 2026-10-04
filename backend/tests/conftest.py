@@ -93,4 +93,4 @@ def embedder() -> HashEmbedder:
 
 @pytest.fixture
 def app(datadir: DataDir, embedder: HashEmbedder) -> AppContext:
-    return AppContext.create(datadir, lambda _datadir, _key: embedder)
+    return AppContext.create(datadir, lambda *_: embedder)

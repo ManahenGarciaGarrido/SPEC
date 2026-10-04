@@ -115,7 +115,7 @@ def test_full_flow_never_writes_into_the_user_folder(
         out = io.StringIO()
         code = cli.main(
             ["--data-dir", str(data_root), *argv],
-            embedder_factory=lambda _d, _k: embedder,
+            embedder_factory=lambda *_: embedder,
             out=out,
             err=io.StringIO(),
         )
@@ -131,7 +131,7 @@ def test_full_flow_never_writes_into_the_user_folder(
     run("index")
     run("status")
 
-    ctx = AppContext.create(DataDir(data_root), lambda _d, _k: embedder)
+    ctx = AppContext.create(DataDir(data_root), lambda *_: embedder)
     fs = ctx.fs()
     for dirpath, _dirs, files in os.walk(sample_repo):
         for name in files:

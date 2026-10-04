@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+
+# Node
+node_modules/
+
+# Rust / Tauri
+target/
+
+# Large binaries and models are never committed (fetched by script with pinned SHA-256)
+*.gguf
+*.onnx
+vendor/
+
+# Local app data used during development
+.faro-data/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

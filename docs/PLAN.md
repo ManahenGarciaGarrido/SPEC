@@ -373,7 +373,7 @@ Al cerrar cada fase: tests en verde, comando de demo, resumen en español, commi
 | # | Pregunta | Respuesta del usuario | Decisión |
 |---|---|---|---|
 | P1 | Nombre del producto | "Ponle tú uno" | **Faro**. Paquete Python `faro`, identificador de Tauri `com.manahengarcia.faro`, directorio de datos `%LOCALAPPDATA%\com.manahengarcia.faro` (el mismo que usará Tauri con `app_local_data_dir()`). |
-| P2 | Idioma de las preguntas | Español; inglés si resulta más eficiente | La comparativa de embeddings de la Fase 1 mide **las mismas preguntas en español y en inglés** con cada modelo. Así la recomendación de idioma sale de datos, no de intuición. |
+| P2 | Idioma de las preguntas | Español; inglés si resulta más eficiente | **Medido en la Fase 1** ([`benchmarks/2026-10-04-embeddings.md`](benchmarks/2026-10-04-embeddings.md)): por defecto `qwen3-0.6b-int8`, el único que acierta bien en español (75 % top 3, 94 % top 5) y empata en inglés (88 %); indexa ~7× más lento. Preguntar en inglés permite `jina-code-int8` (7× más rápido, 88 % / 100 %), seleccionable con `faro models use`. |
 | P3 | Contenido del instalador | A mi elección | Instalador completo: llama.cpp (CPU + CUDA 12.4), modelo de embeddings y WebView2 offline. Se revisa en la Fase 6 con los tamaños reales; si CUDA dispara el tamaño, pasa a componente opcional del instalador. |
 | P4 | CI con GitHub Actions | Sí, montado profesionalmente | Desde la Fase 1: lint + tipos, tests en Ubuntu **y Windows**, la batería completa dentro de un *network namespace* sin red, acciones fijadas por SHA, permisos mínimos y Dependabot. |
 | P5 | Windows Pro / Sandbox | Sí, Windows Pro | Aceptación de la Fase 6 en Windows Sandbox con `<Networking>Disable</Networking>`. |
@@ -400,4 +400,4 @@ Lo que la implementación cambió respecto a las secciones anteriores, y por qu�
 | 9 | — | La búsqueda solo consulta las raíces configuradas | Una carpeta quitada de la lista blanca desaparece de los resultados al momento, sin esperar a reindexar |
 | 10 | Troceado por función/clase | Además: comentarios, decoradores y firmas de Dart se pegan al nodo siguiente; la cabecera de una función grande viaja con el primer trozo del cuerpo | Sin ello, la prueba con Dart y TypeScript dejaba la firma `login(...)` separada de su cuerpo, y el fragmento citado no se entendía |
 | 11 | — | Partición de identificadores sensible a Unicode | `validación` se partía en `validaci` + `ón` |
-
+| 12 | Embeddings en CPU "sin más" | Entrada al modelo limitada a 2.000 caracteres; lotes adaptativos con presupuesto *lote × tokens²*; *arena* de onnxruntime solo durante el indexado | **Medido:** la primera comparativa murió por falta de memoria. Una plantilla HTML de una línea (6 KB ≈ 3.000 tokens) en un lote de 16 necesitaba >10 GB. Con las tres medidas, 400 fragmentos reales: 92 s y 2,2 GB retenidos solo mientras se indexa (antes 124 s y 6,2 GB permanentes); las consultas usan un modelo sin *arena* (~0,5 GB) |

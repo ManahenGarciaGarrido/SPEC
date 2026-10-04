@@ -11,7 +11,7 @@ from faro.datadir import DataDir
 
 CONFIG_FILE = "config.json"
 CONFIG_VERSION = 1
-DEFAULT_EMBEDDING_MODEL = "jina-code-int8"
+DEFAULT_EMBEDDING_MODEL = "qwen3-0.6b-int8"  # docs/benchmarks/2026-10-04-embeddings.md
 
 
 class ConfigError(Exception):

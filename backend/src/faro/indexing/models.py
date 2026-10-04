@@ -87,6 +87,25 @@ _QWEN_TOKENIZER = _tokenizer_files(
     }
 )
 
+_JINA_ES_REVISION = "8e2d780d8fd38f81ca9123ee28e4c5a968aaf21e"
+_JINA_ES_TOKENIZER = _tokenizer_files(
+    {
+        "config.json": (1503, "1b01dc4ac97fcc8d2fa9ee5d7661a4a70394ac7b8f355f1f0871bbc0f23af009"),
+        "special_tokens_map.json": (
+            958,
+            "f23c8e6099631c233c16d9bf8dab198f610826cdd1b358f270f6d55c1863e857",
+        ),
+        "tokenizer.json": (
+            2637974,
+            "5cd8fa360a99a895a4afce83d98131bb74ec2e957ed238f6cdd6107358ca25dc",
+        ),
+        "tokenizer_config.json": (
+            1211,
+            "99c5e1cf31def1533447759dca2f1c22853d499c0c73e13d9667ae2b5ff1fa0b",
+        ),
+    }
+)
+
 # Qwen3-Embedding expects an instruction before each query (none for documents).
 _QWEN_QUERY_PREFIX = (
     "Instruct: Given a question about a software project, retrieve the source code "
@@ -130,6 +149,25 @@ REGISTRY: dict[str, ModelSpec] = {
                     "ed45870251c9f0cf656e78aab0d37a23489066df8a222bb1c8caf8a45f2cb16d",
                 ),
                 *_JINA_TOKENIZER,
+            ),
+            license="Apache-2.0",
+        ),
+        ModelSpec(
+            key="jina-es-int8",
+            fastembed_name="jinaai/jina-embeddings-v2-base-es",
+            description="Jina v2 base es (int8 quantized): bilingual Spanish-English",
+            dim=768,
+            repository="jinaai/jina-embeddings-v2-base-es",
+            revision=_JINA_ES_REVISION,
+            files=(
+                # fastembed looks for onnx/model.onnx for this model name.
+                ModelFile(
+                    "onnx/model_quantized.onnx",
+                    "onnx/model.onnx",
+                    161789773,
+                    "5af68309317d5a7a5b63bf1c4e336dc8bd9a9104e8d16eebeb12499f33cb463c",
+                ),
+                *_JINA_ES_TOKENIZER,
             ),
             license="Apache-2.0",
         ),

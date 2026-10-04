@@ -96,7 +96,7 @@ uv run python tools/bench_report.py informe.json
 Detalle y motivo en `docs/PLAN.md` §4 (plan) y §11 (cambios de la Fase 1). Resumen:
 
 - Gramáticas de tree-sitter como **wheels individuales**; la de **Dart, copiada sin modificar** en `backend/grammars/tree-sitter-dart`, con `PROVENANCE.md` y un test de hashes.
-- Embeddings con fastembed **siempre offline** (`specific_model_path`, `local_files_only`, `HF_HUB_OFFLINE=1`, caché dentro del directorio de datos). Modelo por defecto: ver `faro.config.DEFAULT_EMBEDDING_MODEL` y `docs/benchmarks/`.
+- Embeddings con fastembed **siempre offline** (`specific_model_path`, `local_files_only`, `HF_HUB_OFFLINE=1`, caché dentro del directorio de datos). Modelo por defecto **`qwen3-0.6b-int8`** (único bueno en español; ~7× más lento al indexar que `jina-code-int8`, la alternativa para preguntar en inglés). Datos en `docs/benchmarks/2026-10-04-embeddings.md`.
 - Búsqueda híbrida con RRF; texto sin *stemming*, identificadores partidos (Unicode) y palabras vacías ES/EN quitadas **solo de la consulta**.
 - Exclusiones duras de secretos y dependencias; los *placeholders* de OneDrive no se abren nunca; las carpetas quitadas de la lista blanca desaparecen de los resultados al momento.
 - `llama-server` siempre con `--no-webui --no-agent --offline --host 127.0.0.1 --api-key <aleatoria>`, entorno sin `LLAMA_*`/`HF_*`, y flags detectados con `--help` del binario real. Perfil híbrido: `--fit on --fit-target 700` (a validar en hardware real).
